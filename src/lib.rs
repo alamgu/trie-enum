@@ -1,11 +1,8 @@
 #![no_std]
 #![allow(incomplete_features)]
-#![feature(const_fn_trait_bound)]
-#![feature(const_panic)]
-#![feature(const_generics)]
-#![feature(const_evaluatable_checked)]
+#![feature(adt_const_params)]
+#![feature(generic_const_exprs)]
 #![feature(const_refs_to_cell)]
-#![feature(destructuring_assignment)]
 
 pub use paste::paste;
 
