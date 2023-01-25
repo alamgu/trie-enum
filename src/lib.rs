@@ -4,6 +4,11 @@
 #![feature(generic_const_exprs)]
 #![feature(const_refs_to_cell)]
 
+#[cfg(test)]
+extern crate std;
+#[cfg(test)]
+use std::println;
+
 pub use paste::paste;
 
 #[derive(Clone, Copy, Debug)]
