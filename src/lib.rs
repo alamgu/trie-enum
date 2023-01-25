@@ -6,12 +6,12 @@
 
 pub use paste::paste;
 
-#[derive(Clone,Copy, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum TrieInstruction<T: Copy> {
     Terminal(Option<T>),
-    Node(u8, usize)
+    Node(u8, usize),
 }
- 
+
 #[derive(Debug)]
 pub struct Trie<T: Copy, const N: usize>([TrieInstruction<T>; N]);
 
@@ -27,12 +27,12 @@ impl<'a, T: Copy + core::fmt::Debug, const N: usize> TrieCursor<'a, T, N> {
             panic!("n not pointing to a node when looking up a value");
         }
         loop {
-            n+=1;
+            n += 1;
             match &trie[n] {
                 TrieInstruction::Node(i, next) if *i == input => {
                     return Some(TrieCursor(self.0, *next));
                 }
-                TrieInstruction::Node(_, _) => { }
+                TrieInstruction::Node(_, _) => {}
                 TrieInstruction::Terminal(_) => {
                     return None;
                 }
@@ -44,7 +44,9 @@ impl<'a, T: Copy + core::fmt::Debug, const N: usize> TrieCursor<'a, T, N> {
         let TrieCursor(Trie(trie), n) = self;
         if let TrieInstruction::Terminal(v) = &trie[*n] {
             v.as_ref()
-        } else { None }
+        } else {
+            None
+        }
     }
 
     pub fn steps(&self, input: &[u8]) -> Option<TrieCursor<'a, T, N>> {
@@ -66,7 +68,6 @@ impl<'a, T: Copy + core::fmt::Debug, const N: usize> TrieCursor<'a, T, N> {
 }
 
 impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
-
     pub fn lookup_total<'a>(&'a self, input: &[u8]) -> Option<&'a T> {
         self.start().lookup_final(input)
     }
@@ -79,14 +80,22 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
         N
     }
 
-
-    pub const fn add_to_trie<'a>(self, mut alloc_idx: usize, k: usize, input: &[u8], value: Option<T>) -> (Self, usize) where [TrieInstruction<T>; N] : Copy {
+    pub const fn add_to_trie<'a>(
+        self,
+        mut alloc_idx: usize,
+        k: usize,
+        input: &[u8],
+        value: Option<T>,
+    ) -> (Self, usize)
+    where
+        [TrieInstruction<T>; N]: Copy,
+    {
         let Trie(mut new_trie) = self;
         let mut ptr = 0;
         let mut iptr = 0;
         while iptr < input.len() {
             let i = input[iptr];
-            iptr+=1;
+            iptr += 1;
             ptr += 1;
             'node_loop: loop {
                 match &new_trie[ptr] {
@@ -98,7 +107,9 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
                             panic!("Malformed trie input");
                         }
                     }
-                    TrieInstruction::Node(_, _) => { ptr += 1; }
+                    TrieInstruction::Node(_, _) => {
+                        ptr += 1;
+                    }
                     TrieInstruction::Terminal(_) => {
                         // If we've reached the terminal, then check that we still have space, and
                         // insert.
@@ -110,7 +121,7 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
                         // new_trie[ptr+1] = new_trie[ptr];
                         new_trie[ptr] = TrieInstruction::Node(i, alloc_idx);
                         ptr = alloc_idx; // Leave the Terminal(None) in place on alloc_idx
-                        alloc_idx+=k;
+                        alloc_idx += k;
                         break 'node_loop;
                     }
                 }
@@ -129,10 +140,10 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
 
     /*pub const fn build_trie<T: Copy, const M: usize>(&[(&[u8], T)]) -> [TrieInstruction<T>; M] where [TrieInstruction<T>; M]: Copy {
 
-      }*/
+    }*/
 
     pub const fn build(pairs: &[(&[u8], T)]) -> Self {
-        let offset = pairs.len()+1;
+        let offset = pairs.len() + 1;
         let mut current_trie = Trie([TrieInstruction::Terminal(None); N]);
         let mut alloc_idx = 3;
         let mut iptr = 0;
@@ -149,28 +160,31 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
         let Trie(mut trie) = self;
         let mut i = 0; // index to the currently-under-consideration point in the trie
         let mut k = 0; // Extra counter to stop when we've cleared the whole item
-        while i < N-1 && k < N {
-            i+=1;
-            k+=1;
-            if let TrieInstruction::Terminal(None) = trie[i] { } else { continue; }
-            if let TrieInstruction::Terminal(_) = trie[i+1] {
+        while i < N - 1 && k < N {
+            i += 1;
+            k += 1;
+            if let TrieInstruction::Terminal(None) = trie[i] {
+            } else {
+                continue;
+            }
+            if let TrieInstruction::Terminal(_) = trie[i + 1] {
                 // Now we know that trie[i] is redundant, remove it.
                 let mut j = 0;
                 while j < N {
                     if let TrieInstruction::Node(item, n) = trie[j] {
                         if n > i {
-                            trie[j] = TrieInstruction::Node(item, n-1);
+                            trie[j] = TrieInstruction::Node(item, n - 1);
                         }
                     }
-                    j+=1;
+                    j += 1;
                 }
                 let mut j = i;
-                while j < N-1 {
-                    trie[j] = trie[j+1];
-                    j+=1;
+                while j < N - 1 {
+                    trie[j] = trie[j + 1];
+                    j += 1;
                 }
                 // New instruction in trie[i], we should check it too
-                i-=1;
+                i -= 1;
             }
         }
         Trie(trie)
@@ -178,12 +192,14 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
 
     pub const fn length(&self) -> usize {
         let Trie(ref trie) = self;
-        let mut i = N-1;
+        let mut i = N - 1;
         while let TrieInstruction::Terminal(None) = trie[i] {
-            if i == 0 { return 0; }
-            i-=1;
+            if i == 0 {
+                return 0;
+            }
+            i -= 1;
         }
-        i+1
+        i + 1
     }
 
     pub const fn trim_to_len<const M: usize>(self) -> Trie<T, M> {
@@ -193,22 +209,23 @@ impl<T: Copy + core::fmt::Debug, const N: usize> Trie<T, N> {
         let mut i = 0;
         while i < M {
             rv[i] = input[i];
-            i+=1;
+            i += 1;
         }
         Trie(rv)
     }
-
-
 }
 
-pub const fn max_len<'a, T, const M: usize>(input: [(&[u8],T); M]) -> usize where [(&'a [u8],T);M] : Copy {
+pub const fn max_len<'a, T, const M: usize>(input: [(&[u8], T); M]) -> usize
+where
+    [(&'a [u8], T); M]: Copy,
+{
     let mut i = 0;
     let mut max = 0;
     while i < M {
         if input[i].0.len() > max {
             max = input[i].0.len();
         }
-        i+=1;
+        i += 1;
     }
     max
 }
@@ -224,7 +241,7 @@ macro_rules! static_trie {
     }
 }
 
-pub trait TrieLookup : Copy {
+pub trait TrieLookup: Copy {
     const N: usize;
     fn start() -> TrieCursor<'static, Self, { Self::N }>;
     fn lookup(i: &[u8]) -> Option<Self>;
@@ -271,23 +288,30 @@ mod tests {
 
     use super::*;
 
-    
-    const SOME_PAIRS: [(&[u8],usize);2] = [(b"Foo", 1), (b"Bar", 2)];
-    static_trie!{ STATIC_TRIE <usize> = SOME_PAIRS }
+    const SOME_PAIRS: [(&[u8], usize); 2] = [(b"Foo", 1), (b"Bar", 2)];
+    static_trie! { STATIC_TRIE <usize> = SOME_PAIRS }
 
-    const SOME_PAIRS2: [(&[u8],usize);2] = [(b"Foo", 1), (b"Far", 2)];
-    static_trie!{ STATIC_TRIE2 <usize> = SOME_PAIRS2 }
-    
-    const SOME_PAIRS3: [(&[u8],usize);2] = [(b"Foo", 1), (b"For", 2)];
-    static_trie!{ STATIC_TRIE3 <usize> = SOME_PAIRS3 }
+    const SOME_PAIRS2: [(&[u8], usize); 2] = [(b"Foo", 1), (b"Far", 2)];
+    static_trie! { STATIC_TRIE2 <usize> = SOME_PAIRS2 }
+
+    const SOME_PAIRS3: [(&[u8], usize); 2] = [(b"Foo", 1), (b"For", 2)];
+    static_trie! { STATIC_TRIE3 <usize> = SOME_PAIRS3 }
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     enum ExampleEnum {
-        One, Two, Three, Twelve
+        One,
+        Two,
+        Three,
+        Twelve,
     }
 
-    const EXAMPLE_PAIRS: [(&[u8],ExampleEnum);4] = [(b"one", ExampleEnum::One), (b"two", ExampleEnum::Two), (b"three", ExampleEnum::Three), (b"twelve", ExampleEnum::Twelve)];
-    static_trie!{ EXAMPLE_TRIE <ExampleEnum> = EXAMPLE_PAIRS }
+    const EXAMPLE_PAIRS: [(&[u8], ExampleEnum); 4] = [
+        (b"one", ExampleEnum::One),
+        (b"two", ExampleEnum::Two),
+        (b"three", ExampleEnum::Three),
+        (b"twelve", ExampleEnum::Twelve),
+    ];
+    static_trie! { EXAMPLE_TRIE <ExampleEnum> = EXAMPLE_PAIRS }
 
     enum_trie! { Ex2 { A = b"Alph", B = b"BOO" } }
 
@@ -305,42 +329,54 @@ mod tests {
         println!("Packed: {:?}", repacked);
         println!("Packed lookup: {:?}", repacked.lookup_total(b"Foo"));
 
-
-        let other_trie = Trie::<_, 30>::build(&[(b"Foo", 1), (b"Far",2)]).repack();
+        let other_trie = Trie::<_, 30>::build(&[(b"Foo", 1), (b"Far", 2)]).repack();
         println!("Overlapping: {:?}", other_trie);
         assert_eq!(other_trie.length(), 11);
-        
-        let other_trie = Trie::<_, 30>::build(&[(b"Foo", 1), (b"For",2)]).repack();
+
+        let other_trie = Trie::<_, 30>::build(&[(b"Foo", 1), (b"For", 2)]).repack();
         assert_eq!(other_trie.length(), 9);
         println!("Overlapping: {:?}", other_trie);
 
-        
         println!("Static packed trie: {:?}", STATIC_TRIE);
         assert_eq!(STATIC_TRIE.0.len(), 13);
 
         println!("Static packed trie2: {:?}", STATIC_TRIE2);
         println!("Static packed trie2: {:?}", STATIC_TRIE2_TEMP_TRIE);
         assert_eq!(STATIC_TRIE2.0.len(), 11);
-        
+
         println!("Static packed trie3: {:?}", STATIC_TRIE3);
         println!("Static packed trie3: {:?}", STATIC_TRIE3_TEMP_TRIE);
         assert_eq!(STATIC_TRIE3.0.len(), 9);
 
         assert_eq!(EXAMPLE_TRIE.lookup_total(b"one"), Some(&ExampleEnum::One));
         assert_eq!(EXAMPLE_TRIE.lookup_total(b"two"), Some(&ExampleEnum::Two));
-        assert_eq!(EXAMPLE_TRIE.lookup_total(b"three"), Some(&ExampleEnum::Three));
-        assert_eq!(EXAMPLE_TRIE.lookup_total(b"twelve"), Some(&ExampleEnum::Twelve));
+        assert_eq!(
+            EXAMPLE_TRIE.lookup_total(b"three"),
+            Some(&ExampleEnum::Three)
+        );
+        assert_eq!(
+            EXAMPLE_TRIE.lookup_total(b"twelve"),
+            Some(&ExampleEnum::Twelve)
+        );
         assert_eq!(EXAMPLE_TRIE.lookup_total(b"twenty"), None);
         assert_eq!(EXAMPLE_TRIE.lookup_total(b"twentyfiveten"), None);
         assert_eq!(EXAMPLE_TRIE.lookup_total(b"nine"), None);
 
         assert_eq!(EX2_TRIE.lookup_total(b"Alph"), Some(&Ex2::A));
         assert_eq!(EX2_TRIE.lookup_total(b"BOO"), Some(&Ex2::B));
-        
+
         assert_eq!(Ex2::lookup(b"Alph"), Some(Ex2::A));
         assert_eq!(Ex2::lookup(b"BOO"), Some(Ex2::B));
 
-        assert_eq!(Ex2::start().steps(b"Al").unwrap().steps(b"ph").unwrap().get_val(), Some(&Ex2::A));
+        assert_eq!(
+            Ex2::start()
+                .steps(b"Al")
+                .unwrap()
+                .steps(b"ph")
+                .unwrap()
+                .get_val(),
+            Some(&Ex2::A)
+        );
         assert!(Ex2::start().steps(b"Al").unwrap().steps(b"phe").is_none());
     }
 }
